@@ -1719,7 +1719,7 @@ class PluginLogCapture(logging.Handler):
     "astrbot_plugin_discord_music",
     "anku0",
     "Discord 音樂插件：智慧搜尋與 LLM 推薦（Hybrid Search 架構）。本地索引 666 首曲目。",
-    "3.1.0",
+    "3.2.0",
 )
 class DiscordMusicPlugin(Star):
     # 泛用停用詞：出現在 english_keywords 也無助於檢索
