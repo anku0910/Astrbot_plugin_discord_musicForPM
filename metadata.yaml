@@ -1,0 +1,19 @@
+repo: https://github.com/anku0910/Astrbot_plugin_discord_musicForPM
+name: astrbot_plugin_discord_music
+version: "3.1.0"
+description: "Discord 音樂插件：Hybrid Search（詞袋+NVIDIA nemotron 向量語意層 + LLM 重排序）、真實證據（wiki 場景/聽眾留言）、分頁 Embed。索引 666 首 + 650 條 4096 維向量。"
+author: anku0
+commands:
+  - name: music_search
+    description: "搜尋音樂（精確匹配即時回應；自然語言走 Hybrid Search，附匹配理由）"
+    usage: "/music_search <關鍵字或自然語言>"
+  - name: music_recommend
+    description: "心情/場景推薦（Hybrid Search + 推薦理由）"
+    usage: "/music_recommend <心情/場景/風格>"
+  - name: music_log
+    description: "召喚最近的後台執行過程日誌（code fence；含 WARNING 以上錯誤）"
+    usage: "/music_log [行數]"
+  - name: music_debug
+    description: "切換除錯模式（log LLM 原始回覆）"
+    usage: "/music_debug"
+dependencies: []
