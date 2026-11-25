@@ -132,6 +132,6 @@ export GEMINI_API_KEY=...     # 或 AstrBot 內建的 gemini_embedding
 
 ## 版權
 
-音樂版權屬 Project Moon、Mili 及各自權利人。本插件僅索引官方公開上傳的影片連結，不儲存、不轉載音訊。
+音樂版權屬 Project Moon、Studio EIM、Mili 及各自權利人。其中大多數戰鬥曲與場景曲由 Studio EIM 編曲，主題曲多由 Mili 演唱。本插件僅索引官方公開上傳的影片連結，不儲存、不轉載音訊。
 
-資料來源：Project Moon 官方 YouTube 頻道、limbuscompany.wiki.gg、遊戲內部 OST 曲目清單。樓層與 Sephirah、五指與父輩等對照經過 wiki 與遊戲資料交叉驗證。
+資料來源：Project Moon 官方 YouTube 頻道、Studio EIM 頻道、limbuscompany.wiki.gg、遊戲內部 OST 曲目清單。樓層與 Sephirah、五指與父輩等對照經過 wiki 與遊戲資料交叉驗證。
