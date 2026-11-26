@@ -446,6 +446,7 @@ class MusicIndex:
                     self.embedding_model = vd.get("embedding_model", "")
             else:
                 self.vectors = {}
+            self._build_vector_matrix()
             self._build_inverted()
             logger.info(
                 f"[MusicIndex] v2 標籤資料：enrich={len(self.enrich)} "
@@ -479,6 +480,25 @@ class MusicIndex:
             if len(t) == 1 and i + 1 < len(tokens) and len(tokens[i + 1]) == 1:
                 out.append(t + tokens[i + 1])
         return out
+
+    def _build_vector_matrix(self) -> None:
+        """預建 numpy 矩陣供餘弦掃描重用（一次性；無 numpy 時留空，走純 Python）。
+        向量已正規化（norm=1.0），內積即 cosine。"""
+        self._vec_ids: Optional[List[str]] = None
+        self._vec_mat = None
+        if not self.vectors:
+            return
+        try:
+            import numpy as np
+            self._vec_ids = list(self.vectors.keys())
+            self._vec_mat = np.asarray([self.vectors[v] for v in self._vec_ids],
+                                       dtype=np.float32)
+            logger.info(f"[MusicIndex] 向量矩陣已就緒（{self._vec_mat.shape[0]}×"
+                        f"{self._vec_mat.shape[1]}，掃描約 1ms）")
+        except Exception as e:
+            self._vec_ids = None
+            self._vec_mat = None
+            logger.info(f"[MusicIndex] numpy 不可用，向量掃描走純 Python: {repr(e)[:60]}")
 
     def _build_inverted(self) -> None:
         """vid -> token set 倒排索引（詞袋語意層，無 embedding 時的 fallback）。"""
@@ -864,13 +884,25 @@ class MusicHybridLLM:
         if not qvec:
             return []
 
+        # 餘弦相似度：優先使用載入時預建的 numpy 矩陣（約 1ms）
         scored = []
-        for vid, vec in index.vectors.items():
-            if len(vec) != len(qvec):
-                continue
-            dot = sum(a * b for a, b in zip(qvec, vec))
-            scored.append((dot, vid))
-        scored.sort(reverse=True)
+        mat = getattr(index, "_vec_mat", None)
+        vids = getattr(index, "_vec_ids", None)
+        if mat is not None and vids is not None and len(qvec) == mat.shape[1]:
+            try:
+                import numpy as _np
+                dots = mat @ _np.asarray(qvec, dtype=_np.float32)
+                scored = sorted(zip(dots.tolist(), vids), reverse=True)
+            except Exception as _e:
+                logger.warning(f"[MusicHybridLLM] numpy 掃描失敗，退回純 Python: {repr(_e)[:60]}")
+                scored = []
+        if not scored:
+            for vid, vec in index.vectors.items():
+                if len(vec) != len(qvec):
+                    continue
+                dot = sum(a * b for a, b in zip(qvec, vec))
+                scored.append((dot, vid))
+            scored.sort(reverse=True)
 
         results = []
         seen = set()
@@ -1719,7 +1751,7 @@ class PluginLogCapture(logging.Handler):
     "astrbot_plugin_discord_music",
     "anku0",
     "Discord 音樂插件：智慧搜尋與 LLM 推薦（Hybrid Search 架構）。本地索引 666 首曲目。",
-    "3.2.0",
+    "3.2.1",
 )
 class DiscordMusicPlugin(Star):
     # 泛用停用詞：出現在 english_keywords 也無助於檢索
