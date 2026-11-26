@@ -45,6 +45,11 @@ UA = {"User-Agent": "Mozilla/5.0 (music-index-builder; contact: local)"}
 
 # 規則式場景/情緒標籤：從標題+描述+留言抓（無 LLM 依賴）
 SCENE_PATTERNS = [
+    # 腦葉公司平常時期的設施 BGM（Neutral01~04，使用者確認）
+    (r"\bneutral\d*\b", "Neutral"), (r"平常", "Neutral"), (r"日常", "Neutral"),
+    # 警報（腦葉／廢墟圖書館皆有 First/Second/Third Warning；中文作「警報」）
+    (r"\b(first|second|third)\s+warning\b", "Warning"),
+    (r"\bwarning\b", "Warning"), (r"警報", "Warning"), (r"警报", "Warning"),
     (r"\blobby\b", "Lobby"), (r"大廳", "Lobby"),
     (r"\bmain\s*menu\b|\bmenu\s*theme\b", "Main Menu"),
     (r"\bbattle\b(?!.*boss)", "Battle"), (r"戰鬥", "Battle"),
@@ -542,6 +547,9 @@ def _norm_track(s: str) -> str:
         if s2 != s:
             s = s2
             break
+    # 剝尾隨的方括號歌單標記（[Limbus Company]、[ Library Of Ruina ]）與開頭 (Spoilers)
+    s = re.sub(r"\s*\[[^\]]*\]\s*$", "", s.strip())
+    s = re.sub(r"^\(?\s*spoilers\s*\)?\s*", "", s.strip(), flags=re.I)
     s = re.sub(r"\s+", " ", s).strip().lower()
     s = re.sub(r"\b0(\d)\b", r"\1", s)
     return s
@@ -732,8 +740,11 @@ def _merge_enriched() -> dict:
     enrich = {}
     if not CACHE.exists():
         return enrich
+    # 只跳過內部產物；不可用「_ 開頭」規則——有些 video_id 本身以 _ 開頭
+    # （15 首曾因此被判為無 enrich，包含 Fly My Wings、Pass On 各章 ED 等）
+    _INTERNAL = {"_vectors.json", "_vectors_meta.json", "_wiki_labels.json"}
     for f in CACHE.glob("*.json"):
-        if f.name.startswith("_"):
+        if f.name in _INTERNAL:
             continue
         try:
             d = json.loads(f.read_text(encoding="utf-8"))

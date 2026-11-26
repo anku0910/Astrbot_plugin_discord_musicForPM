@@ -117,6 +117,20 @@ CHINESE_TO_ENGLISH = {
     "盧西奧": "Lucio",
     "绮拉": "Kira",
     "綺拉": "Kira",
+    # 腦葉公司平常時期的設施 BGM（Neutral01~04）
+    # 警報（Warning；腦葉／廢墟圖書館皆有，中文一律作「警報」）
+    "警報": "Warning",
+    "警报": "Warning",
+    "第一次警報": "First Warning",
+    "第一次警报": "First Warning",
+    "第二次警報": "Second Warning",
+    "第二次警报": "Second Warning",
+    "第三次警報": "Third Warning",
+    "第三次警报": "Third Warning",
+    "平常": "Neutral",
+    "日常": "Neutral",
+    "普通": "Neutral",
+    "一般": "Neutral",
     "Mili": "Mili",
     "Mili頻道": "Mili Channel",
     "音樂": "music",
@@ -363,6 +377,8 @@ _GAME_PLAYLIST_ALIASES = {
 }
 
 
+_WARNING_ZH2EN = {"第一次警報": "First Warning", "第二次警報": "Second Warning",
+                  "第三次警報": "Third Warning"}
 # 中英片語對照表：查詢（正規化後）→ 結構化分析
 # 命中即完全跳過 LLM 理解與字典回退（理解階段 10~20s → <1ms）
 # 涵蓋：樓層、五指/父輩、章節、解放戰、Boss 名、場景、作品
@@ -454,6 +470,13 @@ PHRASE_TABLE["戰鬥音樂"] = _ph(scene=["Battle"])
 PHRASE_TABLE["战斗音乐"] = _ph(scene=["Battle"])
 PHRASE_TABLE["結尾音樂"] = _ph(scene=["Ending"])
 PHRASE_TABLE["Mili"] = _ph(game=["Mili"])
+# 警報（Warning；兩作皆有，不設作品過濾）
+for _z in ("警報", "警报", "警報音樂", "警报音乐", "第一次警報", "第二次警報", "第三次警報"):
+    PHRASE_TABLE["".join(_z.split())] = _ph(scene=[_WARNING_ZH2EN.get(_z, "Warning")])
+# 腦葉平常時期的設施 BGM（Neutral01~04，使用者確認）
+for _z in ("平常的音樂", "平常的音乐", "日常音樂", "日常音乐",
+           "平常的bgm", "平常的BGM", "腦葉平常", "脑叶平常", "平常"):
+    PHRASE_TABLE["".join(_z.split())] = _ph(game=[_LC], scene=["Neutral"])
 
 
 def _normalize_phrase(q: str) -> str:
@@ -1846,7 +1869,7 @@ class PluginLogCapture(logging.Handler):
     "astrbot_plugin_discord_music",
     "anku0",
     "Discord 音樂插件：智慧搜尋與 LLM 推薦（Hybrid Search 架構）。本地索引 666 首曲目。",
-    "3.2.2",
+    "3.2.4",
 )
 class DiscordMusicPlugin(Star):
     # 泛用停用詞：出現在 english_keywords 也無助於檢索
