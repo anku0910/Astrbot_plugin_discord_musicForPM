@@ -82,40 +82,35 @@ CHINESE_TO_ENGLISH = {
     "瓦爾普吉斯": "Walpurgis Night",
     "瓦尔普吉斯": "Walpurgis Night",
     # Canto V 大湖篇 Boss（wiki.gg：Canto V 相關 Boss 名）
-    "里卡多": "Ricardo",
+    # ↓ Boss 名一律以邊獄公司中文維基（灰機wiki）與 limbuscompany.wiki.gg 為準
+    "里卡多": "Ricardo",              # 灰機wiki／使用者確認
     "亚哈": "Ahab",
-    "亞哈": "Ahab",
-    "竹帽金": "Bamboo-hatted Kim",
+    "亞哈": "Ahab",                   # 萌娘百科
+    "金笠": "Bamboo-hatted Kim",       # 灰機wiki（原「竹帽金」無依據）
     # Canto VI 希斯克利夫篇
-    "希斯克利夫": "Heathcliff",
-    "时间撕裂者": "Time Ripper",
-    "時間撕裂者": "Time Ripper",
+    "希斯克利夫": "Heathcliff",        # 灰機wiki
+    # Time Ripper／Mayors 暫無中文維基譯名，不猜
     # Canto VII 堂吉訶德篇
     "理发师": "The Barber",
-    "理髮師": "The Barber",
-    "杜尔西内": "Dulcinea",
-    "杜爾西內": "Dulcinea",
+    "理髮師": "The Barber",           # 灰機wiki
+    "杜尔西内娅": "Dulcinea",         # 灰機wiki（原「杜爾西內」漏字）
+    "杜爾西內婭": "Dulcinea",
     "桑乔": "Sancho",
-    "桑丘": "Sancho",
+    "桑丘": "Sancho",                 # 灰機wiki
     # 間章/EX Boss
     "费边": "Fabius",
-    "費邊": "Fabius",
-    "市长": "Mayors",
-    "市長": "Mayors",
-    "鲁福": "Rufo",
-    "魯福": "Rufo",
-    "林庆烨": "Im Gyeong-eop",
-    "林慶燁": "Im Gyeong-eop",
-    # Canto X 新篇 Boss
-    "深红之神": "Crimson God",
-    "深紅之神": "Crimson God",
+    "費邊": "Fabius",                 # 術語定案 #70
+    "卢佛": "Rufo",                   # 灰機wiki（原「魯福」無依據）
+    "盧佛": "Rufo",
+    "林庆业": "Im Gyeong-eop",        # 灰機wiki（原「林慶燁」無依據）
+    "林慶業": "Im Gyeong-eop",
+    # Canto X 新篇 Boss（灰機wiki：赤红之神；The Warden 中文僅作牧师）
+    "赤红之神": "Crimson God",
+    "赤紅之神": "Crimson God",
     "黑派": "Le Noir",
-    "典狱长": "The Warden",
-    "典獄長": "The Warden",
     "牧师": "The Chaplain",
     "牧師": "The Chaplain",
-    "里奥斯": "Ryoshu",
-    "里奧斯": "Ryoshu",
+    "良秀": "Ryoshu",                  # 灰機wiki（原「里奧斯」無依據）
     "瓦伦希娜": "Valencina",
     "瓦倫希娜": "Valencina",
     "卢西奥": "Lucio",
@@ -366,6 +361,104 @@ _GAME_PLAYLIST_ALIASES = {
     "limbus company": ["limbus"],
     "mili": ["mili"],
 }
+
+
+# 中英片語對照表：查詢（正規化後）→ 結構化分析
+# 命中即完全跳過 LLM 理解與字典回退（理解階段 10~20s → <1ms）
+# 涵蓋：樓層、五指/父輩、章節、解放戰、Boss 名、場景、作品
+def _ph(game=None, character=None, scene=None, genre=None, mood=None):
+    return {
+        "game_filters": game or [], "character_terms": character or [],
+        "scene_terms": scene or [], "genre_terms": genre or [],
+        "mood_terms": mood or [],
+    }
+
+
+_R = "Library of Ruina"
+_L = "Limbus Company"
+_LC = "Lobotomy Corporation"
+_FLOORS = [("總類層", "Keter"), ("宗教層", "Hokma"), ("哲學層", "Binah"),
+           ("社會層", "Chesed"), ("語言層", "Gebura"), ("自然層", "Tiphereth"),
+           ("藝術層", "Netzach"), ("文學層", "Hod"), ("科技層", "Yesod"),
+           ("歷史層", "Malkuth")]
+_FINGERS = [("拇指", "Thumb"), ("食指", "Index"), ("中指", "Middle"),
+            ("環指", "Ring"), ("無名指", "Ring"), ("小指", "Pinky")]
+_CANTOS = [("第一章", "Canto I"), ("第二章", "Canto II"), ("第三章", "Canto III"),
+           ("第四章", "Canto IV"), ("第五章", "Canto V"), ("第六章", "Canto VI"),
+           ("第七章", "Canto VII"), ("第八章", "Canto VIII"),
+           ("第九章", "Canto IX"), ("第十章", "Canto X")]
+
+PHRASE_TABLE: Dict[str, Dict[str, Any]] = {}
+
+# 樓層：XX層 / XX層戰鬥
+for zh, en in _FLOORS:
+    for z in (zh, zh.replace("層", "层")):
+        PHRASE_TABLE[z] = _ph(game=[_R], character=[en])
+        PHRASE_TABLE[z + "戰鬥"] = _ph(game=[_R], character=[en], scene=["Battle"])
+        PHRASE_TABLE[z + "战斗"] = _ph(game=[_R], character=[en], scene=["Battle"])
+
+# 五指：XX指 / XX指戰鬥 / XX指父輩
+for zh, en in _FINGERS:
+    for z in (zh, zh.replace("無名指", "无名指")):
+        PHRASE_TABLE[z] = _ph(game=[_L], scene=[en])
+        PHRASE_TABLE[z + "戰鬥"] = _ph(game=[_L], scene=[en], scene_kw=None) if False else _ph(game=[_L], scene=[en, "Battle"])
+        PHRASE_TABLE[z + "父輩"] = _ph(game=[_L], character=[en + " Nursefather"], scene=[en])
+
+# 五指父輩本名
+for zh, en in [("瓦倫希娜", "Valencina"), ("瓦伦希娜", "Valencina"),
+               ("里恩", "Rien"), ("馬蒂亞斯", "Matthias"), ("马蒂亚斯", "Matthias"),
+               ("卡利斯托", "Callisto"), ("阿賴耶", "Araya"), ("阿赖耶", "Araya")]:
+    PHRASE_TABLE[zh] = _ph(game=[_L], character=[en])
+    PHRASE_TABLE[zh + "戰鬥"] = _ph(game=[_L], character=[en], scene=["Battle"])
+
+# 章節
+for zh, en in _CANTOS:
+    for z in (zh, zh.replace("第", "第")):
+        PHRASE_TABLE[z] = _ph(game=[_L], scene=[en])
+        PHRASE_TABLE[z + "戰鬥"] = _ph(game=[_L], scene=[en, "Battle"])
+PHRASE_TABLE["間章"] = _ph(game=[_L], scene=["Intervallo"])
+PHRASE_TABLE["间章"] = _ph(game=[_L], scene=["Intervallo"])
+PHRASE_TABLE["瓦爾普吉斯"] = _ph(game=[_L], scene=["Walpurgis Night"])
+PHRASE_TABLE["瓦尔普吉斯"] = _ph(game=[_L], scene=["Walpurgis Night"])
+PHRASE_TABLE["瓦爾普吉斯之夜"] = _ph(game=[_L], scene=["Walpurgis Night"])
+
+# 解放戰（Realization）
+PHRASE_TABLE["羅蘭解放戰"] = _ph(game=[_R], character=["Roland"], scene=["Realization"])
+PHRASE_TABLE["罗兰解放战"] = _ph(game=[_R], character=["Roland"], scene=["Realization"])
+PHRASE_TABLE["安潔拉解放戰"] = _ph(game=[_R], character=["Angela"], scene=["Realization"])
+PHRASE_TABLE["安洁拉解放战"] = _ph(game=[_R], character=["Angela"], scene=["Realization"])
+PHRASE_TABLE["解放戰"] = _ph(scene=["Realization"])
+
+# Boss 名（依灰機wiki 與 limbuscompany.wiki.gg；無中文譯名者不收）
+for zh, en in [("里卡多", "Ricardo"), ("里卡多", "Ricardo"),
+               ("亞哈", "Ahab"), ("金笠", "Bamboo-hatted Kim"),
+               ("希斯克利夫", "Heathcliff"), ("理髮師", "The Barber"),
+               ("杜爾西內婭", "Dulcinea"), ("桑丘", "Sancho"),
+               ("費邊", "Fabius"), ("盧佛", "Rufo"),
+               ("林慶業", "Im Gyeong-eop"), ("赤紅之神", "Crimson God"),
+               ("牧師", "The Chaplain"), ("良秀", "Ryoshu"),
+               ("綺拉", "Kira"), ("盧西奧", "Lucio"),
+               ("瓦倫希娜", "Valencina"), ("卢西奥", "Lucio")]:
+    PHRASE_TABLE[zh] = _ph(game=[_L], character=[en])
+    PHRASE_TABLE[zh + "戰鬥"] = _ph(game=[_L], character=[en], scene=["Battle"])
+
+# 場景 / 作品
+PHRASE_TABLE["圖書館大廳"] = _ph(game=[_R], scene=["Lobby"])
+PHRASE_TABLE["图书馆大厅"] = _ph(game=[_R], scene=["Lobby"])
+PHRASE_TABLE["腦葉大廳"] = _ph(game=[_LC], scene=["Lobby"])
+PHRASE_TABLE["脑叶大厅"] = _ph(game=[_LC], scene=["Lobby"])
+PHRASE_TABLE["主選單"] = _ph(scene=["Main Menu"])
+PHRASE_TABLE["主選单"] = _ph(scene=["Main Menu"])
+PHRASE_TABLE["主畫面"] = _ph(scene=["Main Menu"])
+PHRASE_TABLE["戰鬥音樂"] = _ph(scene=["Battle"])
+PHRASE_TABLE["战斗音乐"] = _ph(scene=["Battle"])
+PHRASE_TABLE["結尾音樂"] = _ph(scene=["Ending"])
+PHRASE_TABLE["Mili"] = _ph(game=["Mili"])
+
+
+def _normalize_phrase(q: str) -> str:
+    """正規化查詢以便比對片語表：小寫、去空白與標點。"""
+    return re.sub(r"[\s　\t\n,，、。.!?？~～]+", "", q.strip().lower())
 
 
 # 使用者指定的角色優先曲目序（標題關鍵字，依序提前）
@@ -1035,16 +1128,18 @@ Boss、王戰 → Boss Battle
 間章 → Intervallo（如 "Intervallo VII-2"）；瓦爾普吉斯之夜 → Walpurgis Night
 查詢「第九章戰鬥」→ scene_terms=["Battle"], english_keywords=["Canto IX"]
 
-【Boss 名對照】（wiki.gg 用途表；查詢 Boss 名 → english_keywords=[Boss 英文名]）
-里卡多↔Ricardo、亞哈↔Ahab、希斯克利夫↔Heathcliff、杜爾西內↔Dulcinea、桑喬↔Sancho、
-費邊↔Fabius、魯福↔Rufo、林慶燁↔Im Gyeong-eop、深紅之神↔Crimson God、
-牧師↔The Chaplain、典獄長↔The Warden、里奧斯↔Ryoshu、瓦倫希娜↔Valencina、
-卢西奥↔Lucio、綺拉↔Kira、竹帽金↔Bamboo-hatted Kim。
+【Boss 名對照】（譯名依邊獄公司中文維基／灰機wiki 與 wiki.gg；查詢 Boss 名 → english_keywords=[Boss 英文名]）
+里卡多↔Ricardo、亞哈↔Ahab、金笠↔Bamboo-hatted Kim、希斯克利夫↔Heathcliff、杜爾西內婭↔Dulcinea、
+桑丘↔Sancho、費邊↔Fabius、盧佛↔Rufo、林慶業↔Im Gyeong-eop、赤紅之神↔Crimson God、
+牧師↔The Chaplain、良秀↔Ryoshu、瓦倫希娜↔Valencina、卢西奥↔Lucio、綺拉↔Kira、阿賴耶↔Araya、
+馬蒂亞斯↔Matthias、里恩↔Rien、卡利斯托↔Callisto。
+無中文維基譯名者（The Warden、Time Ripper、Mayors）請直接用英文原名。
 
 【Library of Ruina 樓層對照】（樓層名 → Sephirah，其戰鬥音樂標題含 Sephirah 名）
-總類層 → Roland；宗教層 → Hokma；哲學層 → Binah；社會層（社會科學層） → Chesed；
+總類層 → Keter；宗教層 → Hokma；哲學層 → Binah；社會層（社會科學層） → Chesed；
 語言層 → Gebura；自然層（自然科學層） → Tiphereth；藝術層 → Netzach；
 文學層 → Hod；科技層 → Yesod；歷史層 → Malkuth。
+羅蘭（Roland）是主角角色（非 Sephirah），其戰鬥曲為遊戲內 Roland01~03（YouTube 名 Roland Realization Theme 1~3）。
 使用者問「XX層 戰鬥音樂」時，必須把對應 Sephirah 英文名放入 english_keywords 或 character_terms，
 並把 Battle 放入 scene_terms。
 
@@ -1751,7 +1846,7 @@ class PluginLogCapture(logging.Handler):
     "astrbot_plugin_discord_music",
     "anku0",
     "Discord 音樂插件：智慧搜尋與 LLM 推薦（Hybrid Search 架構）。本地索引 666 首曲目。",
-    "3.2.1",
+    "3.2.2",
 )
 class DiscordMusicPlugin(Star):
     # 泛用停用詞：出現在 english_keywords 也無助於檢索
